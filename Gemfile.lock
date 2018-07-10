@@ -1,0 +1,35 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    influxdb (0.5.3)
+    mustermann (1.0.2)
+    oj (3.6.3)
+    puma (3.11.4)
+    rack (2.0.5)
+    rack-protection (2.0.3)
+      rack
+    rake (12.3.1)
+    sinatra (2.0.3)
+      mustermann (~> 1.0)
+      rack (~> 2.0)
+      rack-protection (= 2.0.3)
+      tilt (~> 2.0)
+    sinatra-cross_origin (0.4.0)
+    tilt (2.0.8)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  influxdb
+  oj
+  puma
+  rake
+  sinatra
+  sinatra-cross_origin
+
+RUBY VERSION
+   ruby 2.4.2p198
+
+BUNDLED WITH
+   1.16.1
