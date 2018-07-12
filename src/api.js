@@ -1,9 +1,8 @@
 import queryString from 'query-string';
-
-const HOST = 'http://0.0.0.0:4567'
+import { API_HOST } from './env';
 
 export const fetchFromAPI = async (path, params, mappingFn) => {
-  const endpoint  = `${HOST}${path}?${queryString.stringify(params)}`;
+  const endpoint  = `${API_HOST}${path}?${queryString.stringify(params)}`;
 
   try {
     const response  = await fetch(endpoint);
