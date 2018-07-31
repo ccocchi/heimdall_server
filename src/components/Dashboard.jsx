@@ -66,6 +66,13 @@ class Dashboard extends React.Component {
               consuming: 'Most time consuming',
               throughput: 'Throughput'
             }}
+
+            periodDataset={[
+              { label: '3h', value: '3h'},
+              { label: '12h', value: '12h'},
+              { label: '1d', value: '1d'},
+              { label: '3d', value: '3d'}
+            ]}
           />
         </div>
       </div>

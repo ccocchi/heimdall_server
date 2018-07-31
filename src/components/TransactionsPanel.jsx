@@ -40,6 +40,7 @@ class TransactionsPanel extends React.Component {
       currentEndpoint: null,
       unit: 'ms',
       data: [],
+      periodDataset: props.periodDataset,
       detailsData: {
         breakdownData: null,
         throughputData: null,
@@ -127,7 +128,7 @@ class TransactionsPanel extends React.Component {
     }
   }
 
-  renderSelect(values) {
+  renderSelect = () => {
     return(
       <FormControl>
         <InputLabel htmlFor="order-by">Sort by</InputLabel>
@@ -139,11 +140,13 @@ class TransactionsPanel extends React.Component {
             id: 'order-by',
           }}
         >
-          {Object.entries(values).map(([value, str]) => <MenuItem key={value} value={value}>{str}</MenuItem>)}
+          {Object.entries(this.props.sortValues).map(([value, str]) => <MenuItem key={value} value={value}>{str}</MenuItem>)}
         </Select>
       </FormControl>
     )
   }
+
+  renderPeriods() {}
 
   render() {
     const { sortValues } = this.props;
@@ -154,7 +157,7 @@ class TransactionsPanel extends React.Component {
         <div className="panel-left">
           <h3>Transactions</h3>
 
-          { isEmpty(sortValues) ? null : this.renderSelect(sortValues) }
+          { isEmpty(sortValues) ? null : this.renderSelect() }
 
           { this.state.errorMsg ? <div className="error-msg">No data for selected period.</div> : null }
 
