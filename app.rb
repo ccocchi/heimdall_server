@@ -185,3 +185,5 @@ class ServerApp < Sinatra::Base
     Oj.dump(response)
   end
 end
+
+use ServerApp

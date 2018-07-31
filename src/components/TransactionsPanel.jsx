@@ -8,6 +8,7 @@ import Select from '@material-ui/core/Select';
 
 import CardNumber from './CardNumber';
 import CardChart from './CardChart';
+import ButtonsContainer from './ButtonsContainer';
 
 import { fetchFromAPI } from '../api';
 import { isEmpty, valueSortFn, convertTimeValuesFn } from '../utils';
@@ -18,8 +19,6 @@ class TransactionLine extends React.Component {
   }
 
   render() {
-
-
     return (
       <div className={classnames("transaction-line", { current: this.props.current })} onClick={this.props.refreshFn(this.props.endpoint)}>
         <div className="ratio-line" style={{ width: `${this.occupationPercent()}%`}}></div>
@@ -37,6 +36,7 @@ class TransactionsPanel extends React.Component {
     super(props);
     this.state = {
       sortValue: Object.keys(props.sortValues)[0],
+      period: null,
       currentEndpoint: null,
       unit: 'ms',
       data: [],
@@ -66,9 +66,7 @@ class TransactionsPanel extends React.Component {
 
   handleSelectChange = event => {
     const value = event.target.value;
-
     this.setState({ sortValue: value });
-    this.refreshData(value);
   }
 
   refreshDetails = endpoint => async () => {
@@ -87,8 +85,8 @@ class TransactionsPanel extends React.Component {
     });
   }
 
-  async refreshData(sortBy) {
-    const raw_data  = await fetchFromAPI('/transactions', { sort_by: sortBy });
+  async refreshData() {
+    const raw_data  = await fetchFromAPI('/transactions', { sort_by: this.state.sortValue });
 
     if (isEmpty(raw_data)) {
       this.setState({ errorMsg: true });
@@ -114,13 +112,19 @@ class TransactionsPanel extends React.Component {
         mean: chartData.mean,
         percentile: chartData.percentile
       },
-      unit: this.unitForSort(sortBy),
+      unit: this.unitForSort(this.state.sortValue),
       errorMsg: false
     })
   }
 
   componentDidMount() {
-    this.refreshData(this.state.sortValue);
+    this.refreshData();
+  }
+
+  componentDidUpdate(_, prevState) {
+    if (this.state.sortValue !== prevState.sortValue) {
+      this.refreshData()
+    }
   }
 
   renderSelect(values) {
