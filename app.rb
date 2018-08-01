@@ -24,7 +24,22 @@ configure {
   set :server, :puma
 }
 
+module PeriodsHelpers
+  private
+
+  def minutes_per_period(period)
+    case period
+    when '3h', nil then 5
+    when '8h' then 10
+    when '1d' then 30
+    when '3d' then 120
+    end
+  end
+end
+
 class QueryBuilder
+  include PeriodsHelpers
+
   attr_reader :params
 
   def initialize(params)
@@ -34,7 +49,7 @@ class QueryBuilder
 
   def transaction_details
     <<-SQL
-    SELECT mean(*), count(total_time)
+    SELECT mean(*), count(total_time) / #{minutes_per_period(@period)} as count
     FROM app
     WHERE endpoint = #{escape(params[:endpoint])} AND time >= now() - #{@period}
     GROUP BY time(#{grouping_interval})
@@ -53,7 +68,7 @@ class QueryBuilder
     column = case params['sort_by']
     when 'slowest'    then 'mean(total_time)'
     when 'consuming'  then 'sum(total_time)'
-    when 'throughput' then 'count(total_time)'
+    when 'throughput' then "count(total_time) / #{minutes_per_period(@period)}"
     end
 
     <<-SQL
@@ -100,7 +115,12 @@ class ResultsParser
       values.each do |vs|
         x = vs.delete('time'.freeze)
         vs.each do |id, value|
-          value = value ? value.round(1) : 0
+          if id != 'count'
+            value = value ? value.round(1) : 0
+          else
+            value = value.round(2)
+          end
+
           series[id] << { x: x, y: value }
         end
       end
@@ -139,18 +159,12 @@ class ResultsParser
       total = result.sum { |h| h[:value] }
       result.each { |h| h[:value] = (h[:value].fdiv(total) * 100).round(2) }
     when 'throughput'
-      result.each { |h| h[:value] = h[:value].fdiv(minutes_per_period).round(2) }
+      result.each { |h| h[:value] = h[:value].round(2) }
     else
       result.each { |h| h[:value] = h[:value].round }
     end
 
     result
-  end
-
-  private
-
-  def minutes_per_period
-    180 # 60 * 3 until we make this dynamic
   end
 end
 
@@ -187,7 +201,6 @@ class ServerApp < Sinatra::Base
     builder   = QueryBuilder.new(params)
     results   = InfluxClient.instance.query(builder.transaction_details)
     parser    = ResultsParser.new(results)
-
     response  = parser.to_graph_series
     results   = InfluxClient.instance.query(builder.transaction_details_kpis)
     response.merge!(
