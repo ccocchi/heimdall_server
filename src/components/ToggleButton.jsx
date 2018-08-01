@@ -1,5 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import classnames from 'classnames';
+
 import PropTypesCustom from '../propTypes';
 
 const ToggleButton = ({ id, label, active, disabled, className, onToggle }) => {
@@ -7,7 +9,7 @@ const ToggleButton = ({ id, label, active, disabled, className, onToggle }) => {
     <button
       id={id}
       disabled={disabled}
-      className={className}
+      className={classnames(className, { active })}
       onClick={() => onToggle() }
     >{label}</button>
   )
@@ -15,7 +17,8 @@ const ToggleButton = ({ id, label, active, disabled, className, onToggle }) => {
 
 ToggleButton.defaultProps = {
 	disabled: false,
-	active: false
+	active: false,
+  className: ''
 }
 
 ToggleButton.propTypes = {

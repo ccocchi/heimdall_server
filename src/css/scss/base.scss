@@ -32,3 +32,7 @@ h3 {
   color: #797979;
   font-weight: 300;
 }
+
+button:focus {
+  outline: none;
+}

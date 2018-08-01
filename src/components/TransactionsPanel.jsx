@@ -13,7 +13,7 @@ import ButtonsContainer from './ButtonsContainer';
 import { fetchFromAPI } from '../api';
 import { isEmpty, valueSortFn, convertTimeValuesFn } from '../utils';
 
-class TransactionLine extends React.Component {
+class TransactionLine extends React.PureComponent {
   occupationPercent = () => {
     return (this.props.value / this.props.max) * 100;
   }
@@ -34,13 +34,14 @@ class TransactionLine extends React.Component {
 class TransactionsPanel extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
       sortValue: Object.keys(props.sortValues)[0],
-      period: null,
+      period: isEmpty(props.periodDataset) ? null : props.periodDataset[0].value,
       currentEndpoint: null,
       unit: 'ms',
       data: [],
-      periodDataset: props.periodDataset,
+      refreshing: false,
       detailsData: {
         breakdownData: null,
         throughputData: null,
@@ -70,13 +71,26 @@ class TransactionsPanel extends React.Component {
     this.setState({ sortValue: value });
   }
 
+  handlePeriodChange = value => () => {
+    this.setState({ period: value });
+  }
+
+  handleRefreshClick = async () => {
+    this.setState({ refreshing: true })
+
+    // Let the CSS animation time to put sprinkles in the eyes of the users
+    setTimeout(() => this.refreshData(), 500)
+  }
+
   refreshDetails = endpoint => async () => {
-    const chartData       = await fetchFromAPI('/transactions/details', { endpoint: endpoint });
+    const params          = { endpoint: endpoint, period: this.state.period }
+    const chartData       = await fetchFromAPI('/transactions/details', params);
     const breakdownData   = chartData.times.map(series => convertTimeValuesFn(series))
     const throughputData  = chartData.throughput.map(series => convertTimeValuesFn(series))
 
     this.setState({
       currentEndpoint: endpoint,
+      refreshing: false,
       detailsData: {
         breakdownData: breakdownData,
         throughputData: throughputData,
@@ -87,10 +101,11 @@ class TransactionsPanel extends React.Component {
   }
 
   async refreshData() {
-    const raw_data  = await fetchFromAPI('/transactions', { sort_by: this.state.sortValue });
+    const params    = { sort_by: this.state.sortValue, period: this.state.period };
+    const raw_data  = await fetchFromAPI('/transactions', params);
 
     if (isEmpty(raw_data)) {
-      this.setState({ errorMsg: true });
+      this.setState({ detailsData: {}, errorMsg: true, data: [], refreshing: false });
       return;
     }
 
@@ -98,7 +113,8 @@ class TransactionsPanel extends React.Component {
     const maxValue  = data.reduce((res, { value }) => value > res ? value : res, 0);
 
     const currentEndpoint = data[0].endpoint;
-    const chartData       = await fetchFromAPI('/transactions/details', { endpoint: currentEndpoint });
+    const detailsParams   = { endpoint: currentEndpoint, period: this.state.period };
+    const chartData       = await fetchFromAPI('/transactions/details', detailsParams);
 
     const breakdownData   = chartData.times.map(series => convertTimeValuesFn(series))
     const throughputData  = chartData.throughput.map(series => convertTimeValuesFn(series))
@@ -113,6 +129,7 @@ class TransactionsPanel extends React.Component {
         mean: chartData.mean,
         percentile: chartData.percentile
       },
+      refreshing: false,
       unit: this.unitForSort(this.state.sortValue),
       errorMsg: false
     })
@@ -124,6 +141,10 @@ class TransactionsPanel extends React.Component {
 
   componentDidUpdate(_, prevState) {
     if (this.state.sortValue !== prevState.sortValue) {
+      this.refreshData()
+    }
+
+    if (this.state.period !== prevState.period) {
       this.refreshData()
     }
   }
@@ -146,18 +167,37 @@ class TransactionsPanel extends React.Component {
     )
   }
 
-  renderPeriods() {}
+  renderPeriods = () => {
+    return(
+      <ButtonsContainer
+        id="periods-buttons"
+        label="Time range"
+        dataset={this.props.periodDataset}
+        selected={this.state.period}
+        onChange={this.handlePeriodChange}
+      />
+    )
+  }
 
   render() {
-    const { sortValues } = this.props;
-    const { data, max, unit, detailsData:{breakdownData, throughputData, mean, percentile} }  = this.state;
+    const { sortValues, periodDataset } = this.props;
+    const { data, max, unit, detailsData:{breakdownData, throughputData, mean, percentile} } = this.state;
 
     return (
       <div className="panel panel__transactions">
         <div className="panel-left">
+          <img
+            className={classnames('refresh-img', { refreshing: this.state.refreshing })}
+            src="./images/refresh.svg"
+            alt="Refresh"
+            onClick={this.handleRefreshClick}
+          />
           <h3>Transactions</h3>
 
-          { isEmpty(sortValues) ? null : this.renderSelect() }
+          <div className="panel-selectors">
+            { isEmpty(sortValues) ? null : this.renderSelect() }
+            { isEmpty(periodDataset) ? null : this.renderPeriods() }
+          </div>
 
           { this.state.errorMsg ? <div className="error-msg">No data for selected period.</div> : null }
 
@@ -181,7 +221,8 @@ class TransactionsPanel extends React.Component {
 
           {breakdownData &&
             <CardChart
-                data={breakdownData}
+                series={breakdownData}
+                period={this.state.period}
                 guessXLabels
                 showLegend
                 enableArea
@@ -191,7 +232,8 @@ class TransactionsPanel extends React.Component {
 
           {throughputData &&
             <CardChart
-                data={throughputData}
+                series={throughputData}
+                period={this.state.period}
                 guessXLabels
                 title="Throughput"
                 colors="d320c"

@@ -3,9 +3,29 @@ import { ResponsiveLine } from '@nivo/line';
 
 class CardChart extends React.Component {
 
-  // Select labels from the x's of the first series
+  /**
+  * Guess ticks values for the X axis based on the data.
+  *
+  * Since data series will most likely contains around the same numbers of
+  * points throughout the periods, and we want to display round values of time
+  * (hours or half-hours), we find the first value being "round" then pick
+  * every 6th value starting from it, resulting in ~ 8 tick values for every
+  * period.
+  *
+  * @returns {Array} Array of tick values for X axis
+  */
   guessXLabels = () => {
-    return this.props.data[0].data.filter(({ x }) => x.endsWith('00')).map(d => d.x)
+    const serie     = this.props.series[0].data;
+    const idx       = serie.findIndex(({ x }) => x.endsWith('00'));
+    const modResult = idx % 6;
+
+    return serie.filter((_, i) => i % 6 === modResult).map(d => d.x);
+  }
+
+  shouldComponentUpdate(nextProps) {
+    // Avoid re-rendering graph in shadow DOM when period change but
+    // before data has been fetched
+    return this.props.series !== nextProps.series;
   }
 
   render() {
@@ -15,7 +35,7 @@ class CardChart extends React.Component {
 
         <ResponsiveLine
             colors={this.props.colors}
-            data={this.props.data}
+            data={this.props.series}
             stacked={true}
             enableDots={false}
             enableArea={this.props.enableArea}
@@ -38,7 +58,8 @@ class CardChart extends React.Component {
               "orient": "bottom",
               "tickSize": 5,
               "tickCount": 3,
-              "tickValues": this.props.guessXLabels ? this.guessXLabels() : null
+              "tickValues": this.props.guessXLabels ? this.guessXLabels() : null,
+              "format": (label) => label.slice(3)
             }}
             legends={ this.props.showLegend ? [
               {

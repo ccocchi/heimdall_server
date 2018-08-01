@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'bundler'
 require 'puma'
 require 'sinatra'
@@ -27,14 +29,15 @@ class QueryBuilder
 
   def initialize(params)
     @params = params
+    @period = params[:period] || '3h'
   end
 
   def transaction_details
     <<-SQL
     SELECT mean(*), count(total_time)
     FROM app
-    WHERE endpoint = #{escape(params[:endpoint])} AND time >= now() - 3h
-    GROUP BY time(5m)
+    WHERE endpoint = #{escape(params[:endpoint])} AND time >= now() - #{@period}
+    GROUP BY time(#{grouping_interval})
     SQL
   end
 
@@ -42,7 +45,7 @@ class QueryBuilder
     <<-SQL
     SELECT mean(total_time), percentile(total_time, 95)
     FROM app
-    WHERE endpoint = #{escape(params[:endpoint])} AND time >= now() - 3h
+    WHERE endpoint = #{escape(params[:endpoint])} AND time >= now() - #{@period}
     SQL
   end
 
@@ -54,11 +57,20 @@ class QueryBuilder
     end
 
     <<-SQL
-    SELECT #{column} as value FROM app WHERE time >= now() - 3h GROUP BY endpoint
+    SELECT #{column} as value FROM app WHERE time >= now() - #{@period} GROUP BY endpoint
     SQL
   end
 
   private
+
+  def grouping_interval
+    case @period
+    when '3h' then '5m'
+    when '8h' then '10m'
+    when '1d' then '30m'
+    when '3d' then '2h'
+    end
+  end
 
   def escape(str)
     "'#{str}'"

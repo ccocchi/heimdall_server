@@ -79,6 +79,69 @@
     }
   }
 
+  .panel-left {
+    position: relative;
+  }
+
+  img.refresh-img {
+    position: absolute;
+    top: 16px;
+    right: 0;
+    width: 24px;
+    cursor: pointer;
+
+    &.refreshing {
+      transform: rotate(1080deg);
+      transition: transform 3s ease-out;
+    }
+  }
+
+  .panel-selectors {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .buttons-container {
+    position: relative;
+    width: 150px;
+
+    label {
+      color: $material_grey;
+      font-size: 1rem;
+      font-family: "Roboto", "Helvetica", sans-serif;
+      line-height: 1;
+      padding: 0;
+      transform: translate(0, 1.5px) scale(0.75);
+      transform-origin: top left;
+      position: absolute;
+    }
+
+    .buttons-container-inner {
+      width: 100%;
+      margin-top: 18px;
+      display: inline-flex;
+      justify-content: space-between;
+    }
+
+    button {
+      display: block;
+      font-family: "Roboto", "Helvetica", sans-serif;
+      border: none;
+      padding: 6px 7px;
+      font-size: 16px;
+      border-radius: 50%;
+
+      &:hover:not(:disabled) {
+        @include background-opacity($pond_water, 0.7);
+      }
+
+      &.active {
+        @include background-opacity($giant_goldfish, 0.6);
+      }
+    }
+
+  }
+
   .card__number {
     display: inline-block;
     position: relative;
@@ -171,11 +234,12 @@
 
   &.current {
     border: 2px solid $giant_goldfish;
+    border: 2px solid rgba(244, 135, 49, 0.6);
   }
 }
 
 .ratio-line {
-  background-color: $pond_water;
+  @include background-opacity($pond_water, 0.7);
   height: 30px;
   z-index: 0;
   position: absolute;
@@ -192,9 +256,4 @@
   width: calc(100% - 10px);
   display: flex;
   justify-content: space-between;
-}
-
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
