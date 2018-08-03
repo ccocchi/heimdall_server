@@ -27,12 +27,21 @@ configure {
 module PeriodsHelpers
   private
 
-  def minutes_per_period(period)
+  def minutes_per_grouping_interval(period)
     case period
     when '3h', nil then 5
     when '8h' then 10
     when '1d' then 30
     when '3d' then 120
+    end
+  end
+
+  def minutes_per_period(period)
+    case period
+    when '3h', nil then 180
+    when '8h' then 480
+    when '1d' then 1440
+    when '3d' then 4320
     end
   end
 end
@@ -49,7 +58,7 @@ class QueryBuilder
 
   def transaction_details
     <<-SQL
-    SELECT mean(*), count(total_time) / #{minutes_per_period(@period)} as count
+    SELECT mean(*), count(total_time) / #{minutes_per_grouping_interval(@period)} as count
     FROM app
     WHERE endpoint = #{escape(params[:endpoint])} AND time >= now() - #{@period}
     GROUP BY time(#{grouping_interval})
