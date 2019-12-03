@@ -73,6 +73,24 @@ class QueryBuilder
     SQL
   end
 
+  def distribution_boundaries
+    <<-SQL
+    SELECT percentile(total_time, 5) as boundary_min, percentile(total_time, 95) as boundary_max
+    FROM app
+    WHERE endpoint = #{escape(params[:endpoint])} AND time >= now() - #{@period}
+    SQL
+  end
+
+  def distribution_details(min, max, interval)
+    # We override the time field to reduce data returned by influxdb
+    <<-SQL
+    SELECT FLOOR((total_time - #{min}) / #{interval}) as time
+    FROM app
+    WHERE endpoint = #{escape(params[:endpoint])} AND time >= now() - #{@period}
+    AND total_time > #{min} AND total_time < #{max}
+    SQL
+  end
+
   def transactions
     column = case params['sort_by']
     when 'slowest'    then 'mean(total_time)'
@@ -175,6 +193,22 @@ class ResultsParser
 
     result
   end
+
+  IDS = (0..14).to_a
+  def to_histogram(start, interval)
+    values  = @results[0]['values']
+    hash    = Hash.new {|h, k| h[k] = 0 }
+    grouped = values.each_with_object(hash) { |v, res| res[v['time']] += 1 }
+    ids     = grouped.keys
+    (IDS - ids).each { |v| grouped[v] = 0 }
+
+    grouped.sort { |(a, _), (b, _)| a <=> b }
+           .map! do |k, v|
+             min = start + (k * interval)
+             max = start + ((k + 1) * interval)
+             { id: k, value: v, label: "#{min.round}ms-#{max.round}ms" }
+           end
+  end
 end
 
 class ServerApp < Sinatra::Base
@@ -215,6 +249,15 @@ class ServerApp < Sinatra::Base
     response.merge!(
       (results.dig(0, 'values', 0) || {}).delete_if { |k, _| k == 'time'.freeze }
                                          .transform_values!(&:round))
+
+    results   = InfluxClient.instance.query(builder.distribution_boundaries)
+    min, max  = results.dig(0, 'values', 0).values_at('boundary_min', 'boundary_max')
+    interval  = (max - min).fdiv(15).round
+    results   = InfluxClient.instance.query(
+      builder.distribution_details(min.round, max.round, interval)
+    )
+
+    response.merge!(distribution: ResultsParser.new(results).to_histogram(min, interval))
 
     Oj.dump(response)
   end

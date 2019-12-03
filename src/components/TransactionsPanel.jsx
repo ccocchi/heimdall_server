@@ -8,6 +8,7 @@ import Select from '@material-ui/core/Select';
 
 import CardNumber from './CardNumber';
 import CardChart from './CardChart';
+import CardBarChart from './CardBarChart';
 import ButtonsContainer from './ButtonsContainer';
 
 import { fetchFromAPI } from '../api';
@@ -127,7 +128,8 @@ class TransactionsPanel extends React.Component {
         breakdownData: breakdownData,
         throughputData: throughputData,
         mean: chartData.mean,
-        percentile: chartData.percentile
+        percentile: chartData.percentile,
+        distributionData: chartData.distribution
       },
       refreshing: false,
       unit: this.unitForSort(this.state.sortValue),
@@ -181,7 +183,7 @@ class TransactionsPanel extends React.Component {
 
   render() {
     const { sortValues, periodDataset } = this.props;
-    const { data, max, unit, detailsData:{breakdownData, throughputData, mean, percentile} } = this.state;
+    const { data, max, unit, detailsData:{breakdownData, throughputData, mean, percentile, distributionData} } = this.state;
 
     return (
       <div className="panel panel__transactions">
@@ -218,6 +220,13 @@ class TransactionsPanel extends React.Component {
             <CardNumber title="Avg response time" value={`${mean || '-'} ms`} />
             <CardNumber title="95th percentile" value={`${percentile || '-'} ms`} />
           </div>
+
+          {distributionData &&
+            <CardBarChart
+              data={distributionData}
+              title="Response time distribution"
+            />
+          }
 
           {breakdownData &&
             <CardChart

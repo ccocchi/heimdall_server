@@ -33,6 +33,7 @@ class CardChart extends React.Component {
       <div className="card card__chart">
         {this.props.title && <div className="card-title">{this.props.title}</div>}
 
+        <div className="chart">
         <ResponsiveLine
             colors={this.props.colors}
             data={this.props.series}
@@ -43,37 +44,37 @@ class CardChart extends React.Component {
             enableGridX={false}
             enableGridY={false}
             margin={{
-              "top": 10,
-              "bottom": 60,
-              "left": 40
+              bottom: 50,
+              left: 40
             }}
             axisLeft={{
-              "orient": "left",
-              "tickSize": 5,
-              "tickPadding": 5,
-              "tickRotation": 0,
-              "tickCount": 3
+              orient: "left",
+              tickSize: 5,
+              tickPadding: 5,
+              tickRotation: 0,
+              tickCount: 3
             }}
             axisBottom={{
-              "orient": "bottom",
-              "tickSize": 5,
-              "tickCount": 3,
-              "tickValues": this.props.guessXLabels ? this.guessXLabels() : null,
-              "format": (label) => label.slice(3)
+              orient: "bottom",
+              tickSize: 5,
+              tickCount: 3,
+              tickValues: this.props.guessXLabels ? this.guessXLabels() : null,
+              format: (label) => label.slice(3)
             }}
             legends={ this.props.showLegend ? [
               {
-                "anchor": "bottom",
-                "direction": "row",
-                "translateY": 50,
-                "itemWidth": 70,
-                "itemHeight": 20,
-                "symbolSize": 12,
-                "symbolShape": "circle"
+                anchor: "bottom",
+                direction: "row",
+                translateY: 50,
+                itemWidth: 70,
+                itemHeight: 20,
+                symbolSize: 12,
+                symbolShape: "circle"
               }
             ] : []}
             minY="auto"
         />
+        </div>
       </div>
     )
   }
