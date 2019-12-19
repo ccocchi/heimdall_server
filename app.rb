@@ -253,11 +253,19 @@ class ServerApp < Sinatra::Base
     results   = InfluxClient.instance.query(builder.distribution_boundaries)
     min, max  = results.dig(0, 'values', 0).values_at('boundary_min', 'boundary_max')
     interval  = (max - min).fdiv(15).round
+    min       = min.round
+    max       = max.ceil
     results   = InfluxClient.instance.query(
-      builder.distribution_details(min.round, max.round, interval)
+      builder.distribution_details(min, max, interval)
     )
 
-    response.merge!(distribution: ResultsParser.new(results).to_histogram(min, interval))
+    response.merge!({
+      distribution: {
+        serie: ResultsParser.new(results).to_histogram(min, interval),
+        min: min,
+        max: max
+      }
+    })
 
     Oj.dump(response)
   end

@@ -28,23 +28,27 @@ class CardBarChart extends React.Component {
       <div className="card card__chart">
         {title && <div className="card-title">{title}</div>}
 
+        <div class="legend">
+          <div>{data.min}ms</div>
+          <div>{data.max}ms</div>
+        </div>
+
         <div className="chart">
           <ResponsiveBar
-            data={data}
+            data={data.serie}
             theme={tooltipTheme}
             enableLabel={false}
-            enableGridY={false}
+            enableGridY={true}
+            gridYValues={[0]}
             enableGridX={false}
             animate={false}
             margin={{
-              bottom: 20
+              bottom: 15
             }}
             tooltip={data => Tooltip(data)}
             colors={['#a8dbd8']}
             axisLeft={null}
-            axisBottom={{
-              tickValues: [0, 1, 2, 3, 4, 5]
-            }}
+            axisBottom={null}
           />
         </div>
       </div>
