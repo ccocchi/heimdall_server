@@ -96,7 +96,8 @@ class TransactionsPanel extends React.Component {
         breakdownData: breakdownData,
         throughputData: throughputData,
         mean: chartData.mean,
-        percentile: chartData.percentile
+        percentile: chartData.percentile,
+        distributionData: chartData.distribution
       }
     });
   }

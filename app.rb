@@ -251,7 +251,7 @@ class ServerApp < Sinatra::Base
                                          .transform_values!(&:round))
 
     results   = InfluxClient.instance.query(builder.distribution_boundaries)
-    min, max  = results.dig(0, 'values', 0).values_at('boundary_min', 'boundary_max')
+    min, max  = results.dig(0, 'values', 0).values_at('boundary_min', 'boundary_max').map!(&:to_f)
     interval  = (max - min).fdiv(15).round
     min       = min.round
     max       = max.ceil
